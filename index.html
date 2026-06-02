@@ -1,0 +1,521 @@
+﻿<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>MuruhuayGO - Mobile</title>
+    <style>
+        /* Reset y bloqueo de scroll en el navegador */
+        body, html {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            background-color: #111;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            overflow: hidden;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        /* Contenedor tamaño celular */
+        .phone-wrapper {
+            width: 100%;
+            max-width: 450px;
+            height: 100vh;
+            margin: 0 auto;
+            position: relative;
+            background-color: #000;
+            box-shadow: 0 0 20px rgba(0,0,0,0.8);
+        }
+
+        /* Páginas base */
+        .page {
+            display: none;
+            height: 100%;
+            width: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            box-sizing: border-box;
+            padding: 25px;
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            overflow-y: auto;
+        }
+
+        .page.active {
+            display: flex;
+        }
+
+        /* CONFIGURACIÓN DE FONDOS */
+        #pagina1 { background-image: linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)), url('IMG-202601.jpg'); }
+        #pagina2 { background-image: linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)), url('IMG-202603.jpg'); }
+        #pagina3 { background-image: linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)), url('IMG-202602.jpg'); }
+        
+        #menu-restaurantes, [id^="rest"] { background-image: linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.6)), url('IMG-202607.jpg'); }
+        #menu-turisticos, [id^="tur"] { background-image: linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.6)), url('https://picsum.photos/720/1280?random=5'); }
+
+        /* Textos */
+        h1 {
+            font-size: 2.6rem;
+            margin: 0 0 10px 0;
+            color: #ffffff;
+            text-shadow: 2px 2px 10px rgba(0,0,0,0.8);
+            font-weight: 800;
+        }
+
+        h2 {
+            font-size: 2rem;
+            color: #ffffff;
+            margin-bottom: 20px;
+            text-shadow: 2px 2px 8px rgba(0,0,0,0.8);
+        }
+        
+        p {
+            font-size: 1.1rem;
+            line-height: 1.4;
+            color: #e0e0e0;
+            margin: 5px 0;
+            text-shadow: 1px 1px 6px rgba(0,0,0,0.9);
+        }
+
+        .txt-destacado {
+            font-size: 1.3rem;
+            color: #f1c40f;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+
+        .txt-info {
+            font-size: 1rem;
+            color: #bdc3c7;
+            font-style: italic;
+        }
+
+        /* Estilo interactivo para el teléfono */
+        .txt-telefono {
+            cursor: pointer;
+            background-color: rgba(255, 255, 255, 0.1);
+            padding: 6px 12px;
+            border-radius: 8px;
+            display: inline-block;
+            margin-top: 5px;
+            border: 1px dashed rgba(255, 255, 255, 0.3);
+            transition: background-color 0.2s;
+        }
+        .txt-telefono:active {
+            background-color: rgba(46, 204, 113, 0.4);
+        }
+
+        /* Alerta flotante (Toast) */
+        .toast {
+            position: fixed;
+            bottom: 120px;
+            left: 50%;
+            transform: translateX(-50%) translateY(20px);
+            background-color: rgba(46, 204, 113, 0.9);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 1rem;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s, transform 0.3s;
+            z-index: 9999;
+        }
+        .toast.show {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+
+        /* IMÁGENES (Con cursor de lupa para denotar el zoom) */
+        .img-principal {
+            width: 100%;
+            max-width: 320px;
+            height: 180px;
+            object-fit: cover;
+            border-radius: 12px;
+            margin: 15px 0;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+            cursor: zoom-in;
+        }
+
+        .contenedor-triple-img {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+            width: 100%;
+            max-width: 320px;
+            margin-bottom: 10px;
+        }
+
+        .img-secundaria {
+            width: 100%;
+            height: 70px;
+            object-fit: cover;
+            border-radius: 8px;
+            box-shadow: 0 3px 6px rgba(0,0,0,0.4);
+            cursor: zoom-in;
+        }
+
+        /* VISOR DE IMÁGENES ZOOM (MODAL OVERLAY) */
+        .image-viewer {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.95);
+            z-index: 10000;
+            justify-content: center;
+            align-items: center;
+        }
+        .image-viewer.active {
+            display: flex;
+        }
+        .image-viewer img {
+            max-width: 90%;
+            max-height: 80%;
+            border-radius: 8px;
+            box-shadow: 0 0 25px rgba(255,255,255,0.2);
+            object-fit: contain;
+        }
+        .close-viewer {
+            position: absolute;
+            top: 30px;
+            right: 25px;
+            background-color: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: none;
+            font-size: 1.8rem;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.5);
+        }
+        .close-viewer:active {
+            background-color: rgba(231, 76, 60, 0.8);
+        }
+
+        /* CONTENEDOR PARA PUBLICIDAD / ANUNCIOS */
+        .contenedor-anuncio {
+            width: 100%;
+            max-width: 320px;
+            min-height: 50px;
+            background-color: rgba(255, 255, 255, 0.05);
+            border: 1px dashed rgba(255, 255, 255, 0.15);
+            margin: 15px 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: #555;
+            font-size: 0.8rem;
+            border-radius: 8px;
+        }
+
+        /* BOTONES GRANDES */
+        button {
+            color: white;
+            border: none;
+            padding: 16px 28px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            border-radius: 16px; 
+            cursor: pointer;
+            box-shadow: 0 6px 18px rgba(0,0,0,0.4);
+            transition: transform 0.1s active;
+        }
+
+        button:active { transform: scale(0.95); }
+
+        .btn-azul { background-color: #3498db; }
+        .btn-rojo { background-color: #e74c3c; }
+        .btn-verde { background-color: #2ecc71; }
+        .btn-naranja { background-color: #e67e22; }
+        .btn-morado { background-color: #9b59b6; }
+
+        .grid-opciones {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            width: 100%;
+            max-width: 360px;
+            margin-bottom: 20px; /* Reducido un poco para dar espacio al banner publicitario */
+        }
+
+        .grid-opciones button {
+            padding: 15px 10px;
+            font-size: 1rem;
+            border-radius: 12px;
+            background-color: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(5px);
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+
+        /* POSICIONAMIENTO */
+        .pos-abajo-derecha { position: absolute; bottom: 35px; right: 25px; }
+        .pos-abajo-izquierda { position: absolute; bottom: 35px; left: 25px; }
+        .pos-turismo { position: absolute; bottom: 205px; left: 25px; }
+        .pos-restaurantes { position: absolute; bottom: 120px; left: 25px; }
+
+        .btn-flecha { font-size: 1.6rem; padding: 12px 22px; border-radius: 50%; }
+    </style>
+</head>
+<body>
+
+    <div class="phone-wrapper">
+
+        <div id="toast" class="toast">¡Número copiado!</div>
+
+        <div id="imageViewer" class="image-viewer">
+            <button class="close-viewer" onclick="cerrarZoom()">✕</button>
+            <img id="imgAmpliada" src="" alt="Imagen ampliada">
+        </div>
+
+        <div id="pagina1" class="page active">
+            <h1>MuruhuayGO</h1>
+            <button class="btn-azul btn-flecha pos-abajo-derecha" onclick="cambiarPagina('pagina2')">➡️</button>
+        </div>
+
+        <div id="pagina2" class="page">
+            <h1>Bienvenidos</h1>
+            <button class="btn-morado pos-turismo" onclick="cambiarPagina('menu-turisticos')">Sitios Turísticos</button>
+            <button class="btn-naranja pos-restaurantes" onclick="cambiarPagina('menu-restaurantes')">Restaurantes</button>
+            <button class="btn-verde pos-abajo-izquierda" onclick="cambiarPagina('pagina3')">Historia</button>
+            <button class="btn-rojo pos-abajo-derecha" onclick="cambiarPagina('pagina1')">Atras</button>
+        </div>
+
+        <div id="pagina3" class="page">
+            <h1>Historia</h1>
+            <p>Descubre el Señor de Muruhuay, una de las devociones más emblemáticas de la sierra central del Perú, ubicada en el cerro Shalacoto del distrito de Acobamba, provincia de Tarma. 
+            La imagen de Cristo crucificado está pintada sobre una roca y su historia se remonta a fines del siglo XVIII, cuando una epidemia de viruela afectó la región. 
+            Según la tradición, los pobladores encontraron una cruz rojiza formada de manera natural en la piedra y, al encomendarse a ella, la peste cesó, por lo que la imagen comenzó a ser venerada como milagrosa. 
+            El nombre Muruhuay proviene del quechua muru, que significa viruela, y huay, que significa casa, es decir, “casa o lugar de la viruela”. 
+            Cada año, del 1 de mayo al 16 de junio, miles de peregrinos llegan al santuario para vivir la festividad, siendo el 3 de mayo el día central con misas, procesiones, alfombras de flores y danzas típicas como la Chonguinada. 
+            Reconocida como Patrimonio Cultural de la Nación en 2017, esta celebración combina fe, cultura andina y tradición viva, convirtiéndose en una experiencia imperdible para quienes visitan Tarma y desean conocer el espíritu del Perú profundo.</p>
+            <button class="btn-rojo pos-abajo-izquierda" onclick="cambiarPagina('pagina2')">Atras</button>
+        </div>
+
+        <div id="menu-turisticos" class="page">
+            <h2>Sitios Turísticos</h2>
+            <div class="grid-opciones">
+                <button onclick="cambiarPagina('tur1')">Lugar 1</button>
+                <button onclick="cambiarPagina('tur2')">Lugar 2</button>
+                <button onclick="cambiarPagina('tur3')">Lugar 3</button>
+                <button onclick="cambiarPagina('tur4')">Lugar 4</button>
+                <button onclick="cambiarPagina('tur5')">Lugar 5</button>
+            </div>
+
+            <div class="contenedor-anuncio">
+                <span>Espacio Publicitario</span>
+            </div>
+
+            <button class="btn-rojo pos-abajo-izquierda" onclick="cambiarPagina('pagina2')">Atras</button>
+        </div>
+
+        <div id="tur1" class="page">
+            <h1>Santuario Muruhuay</h1>
+            <img class="img-principal" src="IMG-202606.jpg" onclick="abrirZoom(this)">
+            <p class="txt-info">📍 Ubicación: Acobamba, Tarma, Junín</p>
+            <button class="btn-rojo pos-abajo-izquierda" onclick="cambiarPagina('menu-turisticos')">Atras</button>
+        </div>
+        <div id="tur2" class="page">
+            <h1>Manantial</h1>
+            <img class="img-principal" src="IMG-2026004.jpg" onclick="abrirZoom(this)">
+            <p class="txt-info">📍 Ubicación: Escribe la ubicación aquí</p>
+            <button class="btn-rojo pos-abajo-izquierda" onclick="cambiarPagina('menu-turisticos')">Atras</button>
+        </div>
+        <div id="tur3" class="page">
+            <h1>El velero</h1>
+            <img class="img-principal" src="IMG-202605.jpg" onclick="abrirZoom(this)">
+            <p class="txt-info">📍 Ubicación: Escribe la ubicación aquí</p>
+            <button class="btn-rojo pos-abajo-izquierda" onclick="cambiarPagina('menu-turisticos')">Atras</button>
+        </div>
+        <div id="tur4" class="page">
+            <h1>Sitio Turístico 4</h1>
+            <img class="img-principal" src="https://picsum.photos/600/400?random=14" onclick="abrirZoom(this)">
+            <p class="txt-info">📍 Ubicación: Escribe la ubicación aquí</p>
+            <button class="btn-rojo pos-abajo-izquierda" onclick="cambiarPagina('menu-turisticos')">Atras</button>
+        </div>
+        <div id="tur5" class="page">
+            <h1>Sitio Turístico 5</h1>
+            <img class="img-principal" src="https://picsum.photos/600/400?random=15" onclick="abrirZoom(this)">
+            <p class="txt-info">📍 Ubicación: Escribe la ubicación aquí</p>
+            <button class="btn-rojo pos-abajo-izquierda" onclick="cambiarPagina('menu-turisticos')">Atras</button>
+        </div>
+
+        <div id="menu-restaurantes" class="page">
+            <h2>Restaurantes</h2>
+            <div class="grid-opciones">
+                <button onclick="cambiarPagina('rest1')">Restaurante 1</button>
+                <button onclick="cambiarPagina('rest2')">Restaurante 2</button>
+                <button onclick="cambiarPagina('rest3')">Restaurante 3</button>
+                <button onclick="cambiarPagina('rest4')">Restaurante 4</button>
+                <button onclick="cambiarPagina('rest5')">Restaurante 5</button>
+                <button onclick="cambiarPagina('rest6')">Restaurante 6</button>
+                <button onclick="cambiarPagina('rest7')">Restaurante 7</button>
+                <button onclick="cambiarPagina('rest8')">Restaurante 8</button>
+            </div>
+
+            <div class="contenedor-anuncio">
+                <span>Espacio Publicitario</span>
+            </div>
+
+            <button class="btn-rojo pos-abajo-izquierda" onclick="cambiarPagina('pagina2')">Atras</button>
+        </div>
+
+        <div id="rest1" class="page">
+            <h1>La Wayunca</h1>
+            <img class="img-principal" src="https://picsum.photos/600/400?random=21" onclick="abrirZoom(this)">
+            <div class="contenedor-triple-img">
+                <img class="img-secundaria" src="https://picsum.photos/200/200?random=22" onclick="abrirZoom(this)">
+                <img class="img-secundaria" src="https://picsum.photos/200/200?random=23" onclick="abrirZoom(this)">
+                <img class="img-secundaria" src="https://picsum.photos/200/200?random=24" onclick="abrirZoom(this)">
+            </div>
+            <p class="txt-destacado">Plato Especial: Picante de cuy</p>
+            <p class="txt-info">📍 Dirección: Av. Principal 123</p>
+            <p class="txt-info txt-telefono" onclick="copiarTelefono('987654321')">📞 Teléfono: 987 654 321</p>
+            <button class="btn-rojo pos-abajo-izquierda" onclick="cambiarPagina('menu-restaurantes')">Atras</button>
+        </div>
+
+        <div id="rest2" class="page">
+            <h1>La olla de barro</h1>
+            <img class="img-principal" src="IMG-202608.jpg" onclick="abrirZoom(this)">
+            <div class="contenedor-triple-img">
+                <img class="img-secundaria" src="IMG-202610.jpg" onclick="abrirZoom(this)"><img class="img-secundaria" src="IMG-202611.jpg" onclick="abrirZoom(this)"><img class="img-secundaria" src="IMG-202609.jpg" onclick="abrirZoom(this)">
+            </div>
+            <p class="txt-destacado">Plato Especial: Pachamanca a la tierra</p>
+            <p class="txt-info">📍 Dirección: Av.Marìa Delgado de Odrìa - Muruhuay</p>
+            <p class="txt-info txt-telefono" onclick="copiarTelefono('910457308')">📞 Teléfono: 910 457 308</p>
+            <button class="btn-rojo pos-abajo-izquierda" onclick="cambiarPagina('menu-restaurantes')">Atras</button>
+        </div>
+
+        <div id="rest3" class="page">
+            <h1>Normandi</h1>
+            <img class="img-principal" src="https://picsum.photos/600/400?random=29" onclick="abrirZoom(this)">
+            <div class="contenedor-triple-img">
+                <img class="img-secundaria" src="https://picsum.photos/200/200?random=30" onclick="abrirZoom(this)"><img class="img-secundaria" src="https://picsum.photos/200/200?random=31" onclick="abrirZoom(this)"><img class="img-secundaria" src="https://picsum.photos/200/200?random=32" onclick="abrirZoom(this)">
+            </div>
+            <p class="txt-destacado">Plato Especial: Picante de cuy</p>
+            <p class="txt-info">📍 Dirección: Escribe la dirección aquí</p>
+            <p class="txt-info txt-telefono" onclick="copiarTelefono('900000003')">📞 Teléfono: 900 000 003</p>
+            <button class="btn-rojo pos-abajo-izquierda" onclick="cambiarPagina('menu-restaurantes')">Atras</button>
+        </div>
+
+        <div id="rest4" class="page">
+            <h1>Mi Tierra de Muruhuay</h1>
+            <img class="img-principal" src="IMG-202612.jpg" onclick="abrirZoom(this)">
+            <div class="contenedor-triple-img">
+                <img class="img-secundaria" src="https://picsum.photos/200/200?random=34" onclick="abrirZoom(this)"><img class="img-secundaria" src="https://picsum.photos/200/200?random=35" onclick="abrirZoom(this)"><img class="img-secundaria" src="https://picsum.photos/200/200?random=36" onclick="abrirZoom(this)">
+            </div>
+            <p class="txt-destacado">Plato Especial: Picante de cuy</p>
+            <p class="txt-info">📍 Dirección: Escribe la dirección aquí</p>
+            <p class="txt-info txt-telefono" onclick="copiarTelefono('900000004')">📞 Teléfono: 900 000 004</p>
+            <button class="btn-rojo pos-abajo-izquierda" onclick="cambiarPagina('menu-restaurantes')">Atras</button>
+        </div>
+
+        <div id="rest5" class="page">
+            <h1>Restaurante 5</h1>
+            <img class="img-principal" src="https://picsum.photos/600/400?random=37" onclick="abrirZoom(this)">
+            <div class="contenedor-triple-img">
+                <img class="img-secundaria" src="https://picsum.photos/200/200?random=38" onclick="abrirZoom(this)"><img class="img-secundaria" src="https://picsum.photos/200/200?random=39" onclick="abrirZoom(this)"><img class="img-secundaria" src="https://picsum.photos/200/200?random=40" onclick="abrirZoom(this)">
+            </div>
+            <p class="txt-destacado">Plato Especial: Picante de cuy</p>
+            <p class="txt-info">📍 Dirección: Escribe la dirección aquí</p>
+            <p class="txt-info txt-telefono" onclick="copiarTelefono('900000005')">📞 Teléfono: 900 000 005</p>
+            <button class="btn-rojo pos-abajo-izquierda" onclick="cambiarPagina('menu-restaurantes')">Atras</button>
+        </div>
+
+        <div id="rest6" class="page">
+            <h1>Restaurante 6</h1>
+            <img class="img-principal" src="https://picsum.photos/600/400?random=41" onclick="abrirZoom(this)">
+            <div class="contenedor-triple-img">
+                <img class="img-secundaria" src="https://picsum.photos/200/200?random=42" onclick="abrirZoom(this)"><img class="img-secundaria" src="https://picsum.photos/200/200?random=43" onclick="abrirZoom(this)"><img class="img-secundaria" src="https://picsum.photos/200/200?random=44" onclick="abrirZoom(this)">
+            </div>
+            <p class="txt-destacado">Plato Especial: Picante de cuy</p>
+            <p class="txt-info">📍 Dirección: Escribe la dirección aquí</p>
+            <p class="txt-info txt-telefono" onclick="copiarTelefono('900000006')">📞 Teléfono: 900 000 006</p>
+            <button class="btn-rojo pos-abajo-izquierda" onclick="cambiarPagina('menu-restaurantes')">Atras</button>
+        </div>
+
+        <div id="rest7" class="page">
+            <h1>Restaurante 7</h1>
+            <img class="img-principal" src="https://picsum.photos/600/400?random=45" onclick="abrirZoom(this)">
+            <div class="contenedor-triple-img">
+                <img class="img-secundaria" src="https://picsum.photos/200/200?random=46" onclick="abrirZoom(this)"><img class="img-secundaria" src="https://picsum.photos/200/200?random=47" onclick="abrirZoom(this)"><img class="img-secundaria" src="https://picsum.photos/200/200?random=48" onclick="abrirZoom(this)">
+            </div>
+            <p class="txt-destacado">Plato Especial: Picante de cuy</p>
+            <p class="txt-info">📍 Dirección: Escribe la dirección aquí</p>
+            <p class="txt-info txt-telefono" onclick="copiarTelefono('900000007')">📞 Teléfono: 900 000 007</p>
+            <button class="btn-rojo pos-abajo-izquierda" onclick="cambiarPagina('menu-restaurantes')">Atras</button>
+        </div>
+
+        <div id="rest8" class="page">
+            <h1>Restaurante 8</h1>
+            <img class="img-principal" src="https://picsum.photos/600/400?random=49" onclick="abrirZoom(this)">
+            <div class="contenedor-triple-img">
+                <img class="img-secundaria" src="https://picsum.photos/200/200?random=50" onclick="abrirZoom(this)"><img class="img-secundaria" src="https://picsum.photos/200/200?random=51" onclick="abrirZoom(this)"><img class="img-secundaria" src="https://picsum.photos/200/200?random=52" onclick="abrirZoom(this)">
+            </div>
+            <p class="txt-destacado">Plato Especial: Picante de cuy</p>
+            <p class="txt-info">📍 Dirección: Escribe la dirección aquí</p>
+            <p class="txt-info txt-telefono" onclick="copiarTelefono('900000008')">📞 Teléfono: 900 000 008</p>
+            <button class="btn-rojo pos-abajo-izquierda" onclick="cambiarPagina('menu-restaurantes')">Atras</button>
+        </div>
+
+   </div>
+
+    <script>
+        // Función general para cambiar pantallas
+        function cambiarPagina(idPaginaDestino) {
+            const paginas = document.querySelectorAll('.page');
+            paginas.forEach(pagina => {
+                pagina.classList.remove('active');
+            });
+            document.getElementById(idPaginaDestino).classList.add('active');
+        }
+
+        // FUNCIÓN: Copiar número al portapapeles
+        function copiarTelefono(numero) {
+            navigator.clipboard.writeText(numero).then(() => {
+                const toast = document.getElementById('toast');
+                toast.classList.add('show');
+                setTimeout(() => {
+                     toast.classList.remove('show');
+                }, 2000);
+            }).catch(err => {
+                console.error('Error al copiar el número: ', err);
+            });
+        }
+
+        // NUEVA FUNCIÓN: Abrir imagen en pantalla completa (Zoom)
+        function abrirZoom(elementoImg) {
+            const viewer = document.getElementById('imageViewer');
+            const imgAmpliada = document.getElementById('imgAmpliada');
+            
+            // Pasa la ruta de la imagen clickeada al visor grande
+            imgAmpliada.src = elementoImg.src;
+            
+            // Muestra el visor en pantalla completa
+            viewer.classList.add('active');
+        }
+
+        // NUEVA FUNCIÓN: Cerrar el visor de imágenes (Botón X)
+        function cerrarZoom() {
+            const viewer = document.getElementById('imageViewer');
+            viewer.classList.remove('active');
+        }
+    </script>
+
+</body>
+</html>
